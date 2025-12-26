@@ -17,4 +17,43 @@
 	crafting_complexity = FOOD_COMPLEXITY_5
 	venue_value = FOOD_PRICE_EXOTIC
 	trash_type = /obj/item/reagent_containers/cup/glass/drinkingglass
+	custom_materials = list(/datum/material/meat = MEATSLAB_MATERIAL_AMOUNT + MEATDISH_MATERIAL_AMOUNT, /datum/material/glass = SHEET_MATERIAL_AMOUNT * 0.5)
 	food_flags = FOOD_TINY_SNOUT_EDIBLE
+
+/obj/item/food/gaywatermelonslice
+	name = "gaywatermelon slice"
+	desc = "A slice of gaywatery goodness."
+	icon = 'troutstation/icons/obj/service/hydroponics/harvest.dmi'
+	icon_state = "gaywatermelonslice"
+	food_reagents = list(
+		/datum/reagent/medicine/gaywater = 1,
+		/datum/reagent/consumable/nutriment/vitamin = 0.2,
+		/datum/reagent/consumable/nutriment = 1,
+	)
+	tastes = list("gay" = 1)
+	foodtypes = FRUIT
+	food_flags = FOOD_FINGER_FOOD | FOOD_TINY_SNOUT_EDIBLE
+	w_class = WEIGHT_CLASS_SMALL
+	snout_eat_message_category = SNOUT_EAT_MESSAGE_CATEGORY_SMUSH
+
+/obj/item/food/gaywatermelonslice/juice_typepath()
+	return /datum/reagent/medicine/gaywater
+
+/obj/item/food/gaywatermelonmush
+	name = "gaywatermelon mush"
+	desc = "A plop of gaywatery goodness."
+	icon = 'troutstation/icons/obj/service/hydroponics/harvest.dmi'
+	icon_state = "gaywatermelonpulp"
+	food_reagents = list(
+		/datum/reagent/medicine/gaywater = 2,
+		/datum/reagent/consumable/nutriment/vitamin = 0.1,
+		/datum/reagent/consumable/nutriment = 0.5,
+	)
+	tastes = list("gay" = 1)
+	foodtypes = FRUIT
+	food_flags = FOOD_FINGER_FOOD | FOOD_TINY_SNOUT_EDIBLE
+	w_class = WEIGHT_CLASS_SMALL
+	snout_eat_message_category = SNOUT_EAT_MESSAGE_CATEGORY_SMUSH
+
+/obj/item/food/gaywatermelonmush/juice_typepath()
+	return /datum/reagent/medicine/gaywater

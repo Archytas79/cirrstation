@@ -44,7 +44,7 @@
 
 /* Calculates the volume of a sound based on distance
  *
- * https://www.desmos.com/calculator/sqdfl8ipgf
+ * https://www.desmos.com/calculator/shjpmz3ck7
  *
  * Arguments:
  * * volume: The initial volume of the sound being played
@@ -326,3 +326,6 @@ GLOBAL_LIST_EMPTY(sfx_datum_by_key)
 #define MAX_EMOTE_PITCH 48000
 // ~0.6 - 1.4 at 0.12
 #define EMOTE_TTS_PITCH_MULTIPLIER 0.12
+
+/// troutstation edit
+#define SFX_GAY "gay_sounds"

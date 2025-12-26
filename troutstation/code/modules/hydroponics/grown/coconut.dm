@@ -36,7 +36,6 @@
 	eat_time = 30 SECONDS // nice work gnawing that coconut you dummy
 	foodtypes = FRUIT
 	tastes = list("coconut" = 1)
-	juice_typepath = /datum/reagent/consumable/coconut_milk
 	throw_speed = 1
 	throw_range = 6
 	force = 2
@@ -44,8 +43,11 @@
 	var/strike_sound = 'troutstation/sound/effects/bowling_strike.ogg'
 	var/cracked = FALSE
 
+/obj/item/food/grown/coconut/juice_typepath()
+	return /datum/reagent/consumable/coconut_milk
+
 /obj/item/food/grown/coconut/make_processable()
-	AddElement(/datum/element/processable_callback, TOOL_ROLLINGPIN, PROC_REF(crack_coconut), 3 SECONDS, table_required = TRUE, screentip_verb = "Crack")
+	AddElement(/datum/element/processable_callback, TOOL_ROLLINGPIN, GLOBAL_PROC_REF(crack_coconut), 3 SECONDS, table_required = TRUE, screentip_verb = "Crack")
 
 /obj/item/food/grown/coconut/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
 	. = ..()
@@ -77,18 +79,20 @@
 	user.balloon_alert(user, "cracked the coconut")
 	crack_coconut()
 
-/obj/item/food/grown/coconut/proc/crack_coconut()
-	if(cracked)
+/proc/crack_coconut(obj/item/food/grown/coconut/coconut) // if anyone can help me make this not a GLOBAL fucking proc i am all ears
+	if(!coconut)
 		return
-	RemoveElement(/datum/element/processable_callback, TOOL_ROLLINGPIN, PROC_REF(crack_coconut), 3 SECONDS, table_required = TRUE, screentip_verb = "Crack")
-	name = "cracked coconut"
-	desc = "This coconut has been split asunder..."
-	icon_state = "cracked_coconut"
-	force = 0
-	throwforce = 0
-	var/datum/component/edible/edible = src.GetComponent(/datum/component/edible)
+	if(coconut.cracked)
+		return
+	coconut.RemoveElement(/datum/element/processable_callback, TOOL_ROLLINGPIN, GLOBAL_PROC_REF(crack_coconut), 3 SECONDS, table_required = TRUE, screentip_verb = "Crack")
+	coconut.name = "cracked coconut"
+	coconut.desc = "This coconut has been split asunder..."
+	coconut.icon_state = "cracked_coconut"
+	coconut.force = 0
+	coconut.throwforce = 0
+	var/datum/component/edible/edible = coconut.GetComponent(/datum/component/edible)
 	edible.eat_time = 5 SECONDS
-	cracked = TRUE
+	coconut.cracked = TRUE
 
 /obj/item/food/desiccated_coconut
 	name = "desiccated coconut"

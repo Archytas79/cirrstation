@@ -12,7 +12,7 @@
 	growing_icon = 'icons/obj/service/hydroponics/growing_fruits.dmi'
 	icon_dead = "watermelon-dead"
 	genes = list(/datum/plant_gene/trait/repeated_harvest)
-	mutatelist = list(/obj/item/seeds/watermelon/holy, /obj/item/seeds/watermelon/barrel)
+	mutatelist = list(/obj/item/seeds/watermelon/holy, /obj/item/seeds/watermelon/barrel, /obj/item/seeds/watermelon/gay) // Troutstation edit
 	reagents_add = list(/datum/reagent/water = 0.2, /datum/reagent/consumable/nutriment/vitamin = 0.04, /datum/reagent/consumable/nutriment = 0.2)
 
 /obj/item/seeds/watermelon/suicide_act(mob/living/user)
@@ -31,8 +31,10 @@
 	bite_consumption_mod = 2
 	w_class = WEIGHT_CLASS_NORMAL
 	foodtypes = FRUIT
-	juice_typepath = /datum/reagent/consumable/watermelonjuice
 	wine_power = 40
+
+/obj/item/food/grown/watermelon/juice_typepath()
+	return /datum/reagent/consumable/watermelonjuice
 
 /obj/item/food/grown/watermelon/make_processable()
 	AddElement(/datum/element/processable, TOOL_KNIFE, /obj/item/food/watermelonslice, 5, 20, screentip_verb = "Slice", sound_to_play = SFX_KNIFE_SLICE)
@@ -95,9 +97,11 @@
 	bite_consumption_mod = 2
 	w_class = WEIGHT_CLASS_NORMAL
 	foodtypes = FRUIT
-	juice_typepath = /datum/reagent/water/holywater
 	wine_power = 70 //Water to wine, baby.
 	wine_flavor = "divinity"
+
+/obj/item/food/grown/holymelon/juice_typepath()
+	return /datum/reagent/water/holywater
 
 /obj/item/food/grown/holymelon/make_processable()
 	AddElement(/datum/element/processable, TOOL_KNIFE, /obj/item/food/holymelonslice, 5, 20, screentip_verb = "Slice", sound_to_play = SFX_KNIFE_SLICE)

@@ -460,7 +460,7 @@
 /datum/relic_node/teleport/reaction_power(mob/user)
 	for(var/mob/living/m in view(3, parent_relic))
 		to_chat(m, span_notice("[parent_relic] vanishes into thin air!"))
-	var/turf/t = find_safe_turf(zlevel = parent_relic.z)
+	var/turf/t = find_safe_turf(parent_relic.z)
 	for (var/mob/living/m in range(0, parent_relic))
 		do_teleport(teleatom = m, destination = t)
 	if (parent_relic.embedded_mob == null)
@@ -529,27 +529,29 @@
 	language = pick(subtypesof(/datum/language/))
 	percent = rand(1, 100)
 
-/datum/relic_node/tabled
-	desc = "This node slammed things onto a table!"
-	var/grapple_range
-	var/table_range
+// Taken out because the way table smashing works has been changed so thoroughly you can no longer access it
 
-/datum/relic_node/tabled/on_generate()
-	grapple_range = rand(1, 4)
-	table_range = rand(6, 15)
+// /datum/relic_node/tabled
+// 	desc = "This node slammed things onto a table!"
+// 	var/grapple_range
+// 	var/table_range
 
-/datum/relic_node/tabled/reaction_power(mob/user)
-	var/list/table_list = list()
-	for (var/obj/structure/table/t in range(table_range, parent_relic))
-		table_list.Add(t)
-	if (table_list.len == 0)
-		return;
-	var/obj/structure/table/chosen_table = pick(table_list)
-	var/datum/component/table_smash/smasher = chosen_table.GetComponent(/datum/component/table_smash)
-	for (var/mob/living/m in view(table_range, parent_relic))
-		smasher.tablepush(m, m)
-		if (parent_relic.embedded_mob == null)
-			do_teleport(teleatom = parent_relic, destination = get_turf(m))
+// /datum/relic_node/tabled/on_generate()
+// 	grapple_range = rand(1, 4)
+// 	table_range = rand(6, 15)
+
+// /datum/relic_node/tabled/reaction_power(mob/user)
+// 	var/list/table_list = list()
+// 	for (var/obj/structure/table/t in range(table_range, parent_relic))
+// 		table_list.Add(t)
+// 	if (table_list.len == 0)
+// 		return;
+// 	var/obj/structure/table/chosen_table = pick(table_list)
+// 	var/datum/component/table_smash/smasher = chosen_table.GetComponent(/datum/component/table_smash)
+// 	for (var/mob/living/m in view(table_range, parent_relic))
+// 		smasher.tablepush(m, m)
+// 		if (parent_relic.embedded_mob == null)
+// 			do_teleport(teleatom = parent_relic, destination = get_turf(m))
 
 /datum/relic_node/contraband
 	desc = "This node made something detectable that security would have problems with..."
@@ -620,7 +622,7 @@
 		/datum/relic_node/dimensional_shift = 10,
 		/datum/relic_node/blood		= 10,
 		/datum/relic_node/rosetta	= 10,
-		/datum/relic_node/tabled	= 10,
+//		/datum/relic_node/tabled	= 10, // they keep changing how table smashing works in the code
 		/datum/relic_node/contraband= 5,
 		/datum/relic_node/cloaking	= 5,
 		/datum/relic_node/embed		= 10,
@@ -670,48 +672,48 @@
 
 /obj/item/relic/proc/on_emped(severity, protection)
 	SIGNAL_HANDLER
-	current_node.check_trans(null, /datum/relic_trans/emp)
+	current_node?.check_trans(null, /datum/relic_trans/emp)
 	if (!activated)
 		reveal()
 	return
 
 /obj/item/relic/proc/on_fired(exposed_temperature, exposed_volume)
 	SIGNAL_HANDLER
-	current_node.check_trans(null, /datum/relic_trans/heat)
+	current_node?.check_trans(null, /datum/relic_trans/heat)
 	return
 
 /obj/item/relic/proc/on_clicked(atom/source, mob/user, obj/item/item)
 	SIGNAL_HANDLER
 	if(item.get_temperature() >= FIRE_MINIMUM_TEMPERATURE_TO_EXIST)
 		balloon_alert(user, "The heat transfer warms [src].")
-		current_node.check_trans(user, /datum/relic_trans/heat)
+		current_node?.check_trans(user, /datum/relic_trans/heat)
 	if (istype(item, /obj/item/reagent_containers))
 		var/obj/item/reagent_containers/container = item
 		container.reagents.remove_all(container.amount_per_transfer_from_this)
 		balloon_alert(user, "[container.amount_per_transfer_from_this] units splashed on [src]")
-		current_node.check_trans(user, /datum/relic_trans/reagent)
+		current_node?.check_trans(user, /datum/relic_trans/reagent)
 
 		return ITEM_INTERACT_SUCCESS
 	return
 
 /obj/item/relic/proc/on_hit_react(datum/source, mob/living/carbon/human/owner, atom/movable/hitby, attack_text, final_block_chance, damage, attack_type, damage_type)
 	SIGNAL_HANDLER
-	current_node.check_trans(owner, /datum/relic_trans/harm, owner)
+	current_node?.check_trans(owner, /datum/relic_trans/harm, owner)
 	return
 
 /obj/item/relic/proc/on_painted()
 	SIGNAL_HANDLER
-	current_node.check_trans(null, /datum/relic_trans/paint)
+	current_node?.check_trans(null, /datum/relic_trans/paint)
 	return
 
 /obj/item/relic/proc/on_exposure(list/lists, /datum/reagents/the_reagents, methods, volume_modifier, show_message)
 	SIGNAL_HANDLER
-	current_node.check_trans(null, /datum/relic_trans/reagent)
+	current_node?.check_trans(null, /datum/relic_trans/reagent)
 	return
 
 /obj/item/relic/proc/on_radiated()
 	SIGNAL_HANDLER
-	current_node.check_trans(null, /datum/relic_trans/irradiate)
+	current_node?.check_trans(null, /datum/relic_trans/irradiate)
 	return
 
 /obj/item/relic/proc/on_embedded(victim, target_limb)
@@ -731,13 +733,13 @@
 	if (hearing_args[HEARING_SPEAKER] == src || get_dist(src, hearing_args[HEARING_SPEAKER]) > canhear_range || hearing_args[HEARING_MESSAGE_MODE][MODE_RELAY])
 		return .
 	//to_chat(hearing_args[HEARING_SPEAKER], span_warning("DEBUG: [source] is listening to [hearing_args[HEARING_SPEAKER]]...."))
-	current_node.check_trans(null, /datum/relic_trans/hear)
+	current_node?.check_trans(null, /datum/relic_trans/hear)
 	return
 
 /obj/item/relic/MouseEntered(location, control, params)
 	. = ..()
 	if (current_node != null)
-		current_node.check_trans(null, /datum/relic_trans/mouseover)
+		current_node?.check_trans(null, /datum/relic_trans/mouseover)
 
 // Rules:
 // - Creates 3-15 nodes
@@ -798,14 +800,14 @@
 	if(istype(living_user) && living_user.combat_mode)
 		user.do_attack_animation(src, ATTACK_EFFECT_PUNCH)
 		to_chat(user, span_warning("You smack the [src]!"))
-		current_node.check_trans(user, /datum/relic_trans/harm, user)
+		current_node?.check_trans(user, /datum/relic_trans/harm, user)
 		return TRUE
 	else
 		if (istype(current_node, /datum/relic_node/rosetta) && istype(user, /mob/living))
 			var/datum/relic_node/rosetta/r = current_node
 			var/mob/living/l = user
 			var/datum/language_holder/lholder = l.get_language_holder()
-			if(lholder.mutual_understanding[r.language] < r.percent)
+			if(lholder.best_mutual_languages[r.language] < r.percent)
 				to_chat(user, span_notice("[src] has familiar text that fills you with knowledge of a language."))
 			else
 				to_chat(user, span_warning("After reading the text on [src], you feel you understand it even less."))
@@ -813,7 +815,7 @@
 			l.grant_partial_language(r.language, r.percent, MAGIC_TRAIT)
 		else
 			to_chat(user, span_notice("You touch [src], its surface seems inviting."))
-		current_node.check_trans(user, /datum/relic_trans/touch)
+		current_node?.check_trans(user, /datum/relic_trans/touch)
 	return ..()
 
 /obj/item/relic/attack_self(mob/user)
@@ -824,10 +826,10 @@
 	var/mob/living/living_user = user
 	if(istype(living_user) && living_user.combat_mode)
 		to_chat(user, span_warning("You smack the [src]!"))
-		current_node.check_trans(user, /datum/relic_trans/harm, user)
+		current_node?.check_trans(user, /datum/relic_trans/harm, user)
 	else
 		to_chat(user, span_notice("You touch [src], its surface seems inviting."))
-		current_node.check_trans(user, /datum/relic_trans/touch)
+		current_node?.check_trans(user, /datum/relic_trans/touch)
 	return //..()
 
 /obj/item/relic/attack(mob/M, mob/user)
@@ -841,11 +843,11 @@
 			to_chat(user, span_warning("You smack yourself with [src]!"))
 		else
 			to_chat(user, span_warning("You smack [M] with [src]!"))
-		current_node.check_trans(user, /datum/relic_trans/harm, M)
+		current_node?.check_trans(user, /datum/relic_trans/harm, M)
 	return ..()
 
 /obj/item/relic/ex_act(severity, target)
-	current_node.check_trans(null, /datum/relic_trans/explode)
+	current_node?.check_trans(null, /datum/relic_trans/explode)
 	return
 
 /obj/item/relic/Destroy(force)

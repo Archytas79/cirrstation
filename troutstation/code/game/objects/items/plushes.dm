@@ -86,7 +86,7 @@
 /obj/item/toy/plush/rufran/attackby(obj/item/item, mob/user, list/modifiers, list/attack_modifiers)
 	if(istype(item, /obj/item/dnainjector))
 		var/obj/item/dnainjector/serum = item
-		embiggen(serum)
+		embiggen(serum, user)
 	return ..()
 
 /obj/item/toy/plush/rufran/proc/embiggen(obj/item/dnainjector/serum, mob/user)
@@ -200,6 +200,7 @@
 
 /obj/item/toy/plush/vending/tool
 	icon_state = "plushie_vend_3"
+	custom_materials = list(/datum/material/iron=SMALL_MATERIAL_AMOUNT*1.5) // amount of iron in a wrench
 
 /obj/item/toy/plush/vending/snack
 	icon_state = "plushie_vend_4"
@@ -224,3 +225,12 @@
 		src.manual_emote("coughs!")
 		squashed += 1
 	return ..()
+
+
+/obj/item/toy/plush/lehto
+	icon = 'troutstation/icons/obj/toys/plushes.dmi'
+	name = "lehto plushie"
+	desc = "A stuffed toy resembling Lehto. He looks as if he were a deer in the headlights."
+	icon_state = "plushie_lehto"
+	inhand_icon_state = null
+	gender = MALE
