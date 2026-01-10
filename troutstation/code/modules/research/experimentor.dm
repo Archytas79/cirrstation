@@ -1,3 +1,14 @@
+/*
+File structure:
+transitions between nodes
+node effects
+core setup
+overrides
+*/
+
+#define RELIC_MATERIAL_CAP 25
+
+
 /datum/relic_trans
 	var/datum/relic_node/next_node
 	var/desc = "An unknown stimulus."
@@ -67,6 +78,7 @@
 	return
 
 /datum/relic_node/proc/run_effect(mob/user)
+	parent_relic.visible_message("[parent_relic] shows increased activity...")
 	parent_relic.balloon_alert(user, "[parent_relic] shows increased activity...")
 	// to_chat(user, span_warning("DEBUG: [parent_relic] is now at [node_id] : [src]"))
 	if(!COOLDOWN_FINISHED(parent_relic, cooldown))
@@ -108,8 +120,9 @@
 
 /datum/relic_node/no_effect
 	desc = "This node didn't seem to do anything..."
+
 /datum/relic_node/no_effect/reaction_power(mob/user)
-		to_chat(user, span_notice("[parent_relic] seizes up, and seems to do nothing..."))
+		parent_relic.visible_message(span_notice("[parent_relic] seizes up, and seems to do nothing..."))
 		return
 
 /datum/relic_node/reagent
@@ -127,7 +140,7 @@
 	return
 
 /datum/relic_node/reagent/reaction_power(mob/user)
-	to_chat(user, span_warning("[parent_relic] leaks [reagent.name] everywhere!"))
+	parent_relic.visible_message(span_warning("[parent_relic] leaks [reagent.name] everywhere!"))
 	playsound(get_turf(parent_relic), 'sound/effects/slosh.ogg', 25, TRUE)
 	var/turf/src_turf = get_turf(parent_relic)
 	var/datum/reagents/tmp_holder = new(units)
@@ -146,6 +159,7 @@
 	var/count
 
 /datum/relic_node/item/on_generate()
+	// removing types that should be in admin hands
 	var/list/invalid_types = list(	/obj/item/debug,
 									/obj/item/card/id/advanced/debug,
 									/obj/item/flashlight/emp/debug,
@@ -166,7 +180,11 @@
 	return
 
 /datum/relic_node/item/reaction_power(mob/user)
-	to_chat(user, span_warning("[parent_relic] spits out [count] of [item_type.name]!"))
+	if (parent_relic.cur_material < count)
+		parent_relic.audible_message(span_notice("[parent_relic] clicks but nothing happens."))
+		return
+	parent_relic.cur_material -= count
+	parent_relic.visible_message(span_warning("[parent_relic] spits out [count] of [item_type.name]!"))
 	playsound(parent_relic, 'sound/items/fulton/fultext_launch.ogg', 50, TRUE, -5)
 	for (var/i in 1 to count)
 		new item_type(get_turf(parent_relic))
@@ -182,6 +200,7 @@
 								/mob/living/basic/space_dragon,
 								/mob/living/basic/revenant,
 								/mob/living/basic/alien/queen)
+
 /datum/relic_node/animal/on_generate()
 	var/list/valid_types = subtypesof(/mob/living/basic)
 	if (!parent_relic.very_dangerous)
@@ -192,21 +211,25 @@
 	return
 
 /datum/relic_node/animal/reaction_power(mob/user)
-	to_chat(user, span_warning("[animal_type.name] come out of [parent_relic]!"))
+	if (parent_relic.cur_material < count)
+		parent_relic.audible_message(span_notice("[parent_relic] clicks but nothing happens."))
+		return
+	parent_relic.cur_material -= count
+	parent_relic.visible_message(span_warning("[animal_type.name] come out of [parent_relic]!"))
 	playsound(parent_relic, 'sound/items/fulton/fultext_launch.ogg', 50, TRUE, -5)
 	for (var/i in 1 to count)
 		new animal_type(get_turf(parent_relic))
 	return
 
 /datum/relic_node/vacuum
-	desc = "This node made it absorb some gasses from the room!"
+	desc = "This node made it absorb some gasses from the room."
 	var/amount
 /datum/relic_node/vacuum/on_generate()
 	amount = rand(1, 700)
 	return
 
 /datum/relic_node/vacuum/reaction_power(mob/user)
-	to_chat(user, span_warning("[parent_relic] absorbs gasses in the room!"))
+	parent_relic.visible_message(span_warning("[parent_relic] absorbs gasses in the room!"))
 	playsound(parent_relic, SFX_RUSTLE, 50, TRUE, -5)
 	var/turf/local_turf = get_turf(parent_relic)
 	var/datum/gas_mixture/environment = local_turf.return_air()
@@ -216,16 +239,22 @@
 	return
 
 /datum/relic_node/outgas
-	desc = "This node made it release some gasses into the air!"
+	desc = "This node made it release some gasses into the air."
 	var/amount
 	var/datum/gas/gas_type
 
 /datum/relic_node/outgas/on_generate()
 	amount = rand(1, 150)
-	gas_type = pick(subtypesof(/datum/gas/))
+	// this happened once and it was funny. never again.
+	var/list/invalid_types = list(/datum/gas/antinoblium)
+	var/list/valid_types = subtypesof(/datum/gas/)
+	if (!parent_relic.very_dangerous)
+		for (var/i as anything in invalid_types)
+			valid_types.Remove(i)
+	gas_type = pick(valid_types)
 
 /datum/relic_node/outgas/reaction_power(mob/user)
-	to_chat(user, span_warning("[parent_relic] releases [gas_type.name] into the air!"))
+	parent_relic.visible_message(span_warning("[parent_relic] releases [gas_type.name] into the air!"))
 	playsound(parent_relic, 'sound/effects/smoke.ogg', 50, TRUE, -3)
 	var/turf/local_turf = get_turf(parent_relic)
 	var/datum/gas_mixture/environment = local_turf.return_air()
@@ -247,7 +276,7 @@
 	return
 
 /datum/relic_node/explode/reaction_power(mob/user)
-	to_chat(user, span_danger("[parent_relic] starts hissing!"))
+	parent_relic.audible_message(span_danger("[parent_relic] starts hissing!"))
 	playsound(parent_relic, 'sound/effects/smoke.ogg', 50, TRUE, -3)
 	addtimer(CALLBACK(src, PROC_REF(cause_explosion), user), rand(3.5 SECONDS, 6 SECONDS))
 	return
@@ -268,7 +297,7 @@
 	return
 
 /datum/relic_node/emp/reaction_power(mob/user)
-	to_chat(user, span_warning("[parent_relic] starts sparking!"))
+	parent_relic.audible_message(span_warning("[parent_relic] starts sparking!"))
 	playsound(parent_relic, SFX_SPARKS, rand(25,50), TRUE, SHORT_RANGE_SOUND_EXTRARANGE)
 	addtimer(CALLBACK(src, PROC_REF(cause_emp), user), rand(3.5 SECONDS, 6 SECONDS))
 	return
@@ -321,7 +350,7 @@
 					if(!istype(device) || (device.get_cell() != to_charge))
 						device = to_charge
 					device.update_appearance(UPDATE_ICON|UPDATE_OVERLAYS)
-					to_chat(user, span_notice("[device] feels energized!"))
+					parent_relic.visible_message(span_notice("[device] feels energized!"))
 					parent_relic.lightning_fx(target, stunner)
 				if(iscarbon(target))
 					var/mob/living/carbon/carboner = target
@@ -350,29 +379,29 @@
 
 	if (force == parent_relic.force)
 		if (damtype == parent_relic.damtype)
-			to_chat(user, span_notice("[parent_relic] seizes up, and seems to do nothing..."))
+			parent_relic.visible_message(span_notice("[parent_relic] seizes up, and seems to do nothing..."))
 			return
 	else
 		if (force > 0)
 			if (force < parent_relic.force)
-				to_chat(user, span_notice("[parent_relic] transforms to look less harmful."))
+				parent_relic.visible_message(span_notice("[parent_relic] transforms to look less harmful."))
 			else if (force >= parent_relic.force)
-				to_chat(user, span_notice("[parent_relic] transforms to look more harmful!"))
+				parent_relic.visible_message(span_notice("[parent_relic] transforms to look more harmful!"))
 		else
 			if (force < parent_relic.force)
-				to_chat(user, span_nicegreen("[parent_relic] transforms to look more helpful!"))
+				parent_relic.visible_message(span_nicegreen("[parent_relic] transforms to look more helpful!"))
 			else if (force >= parent_relic.force)
-				to_chat(user, span_notice("[parent_relic] transforms to look less helpful."))
+				parent_relic.visible_message(span_notice("[parent_relic] transforms to look less helpful."))
 	parent_relic.force = force
 	parent_relic.throwforce = force
 
 	if (tool_type != parent_relic.tool_behaviour)
-		to_chat(user, span_notice("[parent_relic] looks like it could be used as a [tool_type]!"))
+		parent_relic.visible_message(span_notice("[parent_relic] looks like it could be used as a [tool_type]!"))
 		parent_relic.tool_behaviour = tool_type
 		parent_relic.toolspeed = tool_speed
 
 	if (damtype != parent_relic.damtype)
-		to_chat(user, span_notice("The external implements of [parent_relic] look different!"))
+		parent_relic.visible_message(span_notice("The external implements of [parent_relic] look different!"))
 		parent_relic.damtype = damtype
 	return
 
@@ -447,7 +476,7 @@
 	delta_energy = rand(5, 50)
 
 /datum/relic_node/rad_pulse/reaction_power(mob/user)
-	to_chat(user, span_warning("[parent_relic] seizes up, and seems to be warm to the touch..."))
+	parent_relic.visible_message(span_warning("[parent_relic] seizes up, and seems to be warm to the touch..."))
 	var/turf/local_turf = get_turf(parent_relic)
 	var/datum/gas_mixture/turf_gasmix = local_turf.return_air()
 	turf_gasmix.temperature += delta_energy / turf_gasmix.heat_capacity()
@@ -497,28 +526,32 @@
 		if (istype(m, /mob/living/carbon/))
 			var/mob/living/carbon/c = m
 			playsound(parent_relic, SFX_DESECRATION, 50, TRUE)
-			if (prob(80)) // Just blood.. blood..
+			if (prob(80)) // Just blood.. blood.. 80%
 				c.blood_volume -= amount
 				to_chat(c, span_bolddanger("[parent_relic] drains some of your succulent lifeforce!"))
-			else if (prob(95)) // Steal a non-brain organ
+				parent_relic.cur_material += 1
+			else if (prob(80)) // Steal a non-brain organ 18%
 				var/obj/item/organ/remove_organ_type = pick(GLOB.bioscrambler_valid_organs)
 				if (c.organs_slot.Find(remove_organ_type.slot))
 					var/obj/item/organ/organ = c.organs_slot[remove_organ_type.slot]
 					if (organ?.owner)
 						organ.Remove(c)
 					to_chat(c, span_bolddanger("[parent_relic] demands something more, and you feel a little hollow."))
+					parent_relic.cur_material += 3
 				else
 					to_chat(c, span_warning("[parent_relic] demands something more, but you do not have what it wants."))
-			else // get a gift :)
+			else // get a gift :) 2%
 				to_chat(c, span_bolddanger("[parent_relic] offers a gift, and you feel your insides change to accept!"))
 				var/gland_types = subtypesof(/obj/item/organ/heart/gland)
 				var/gland_type = pick(gland_types)
 				var/obj/item/organ/heart/gland/new_gland = new gland_type()
 				if (new_gland)
 					new_gland.replace_into(c)
+				parent_relic.cur_material -= 5
 		else
 			m.blood_volume -= amount
 			to_chat(m, span_danger("[parent_relic] drains some of your lifeforce!"))
+			parent_relic.cur_material += 1
 
 /datum/relic_node/rosetta
 	desc = "This node offers thesaurical knowledge..."
@@ -562,13 +595,21 @@
 /datum/relic_node/cloaking
 	desc = "This node changed the relic's visibility..."
 	var/alpha
+	var/cloak_range
 
 /datum/relic_node/cloaking/on_generate()
-	alpha = rand(0, 200)
+	alpha = rand(50, 200)
+	cloak_range = rand(1,4)
 
 /datum/relic_node/cloaking/reaction_power(mob/user)
 	parent_relic.sparks.start()
-	parent_relic.alpha = alpha
+	var/list/cloak_list = list()
+	for (var/atom/a in pick(view(cloak_range, parent_relic)))
+		cloak_list.Add(a)
+	var/atom/picked_a = pick(cloak_list)
+	picked_a.alpha += alpha
+	parent_relic.visible_message(span_notice("[picked_a] became a bit harder to see..."))
+
 
 /datum/relic_node/embed
 	desc = "This node made the relic try to embed itself inside something!!!"
@@ -587,10 +628,42 @@
 	var/danger_zone = pick(GLOB.all_body_zones)
 	parent_relic.force_embed(poor_sob, danger_zone)
 
+/datum/relic_node/teeth
+	desc = "This node made the relic jump at a mouth!"
+	var/tooth_count
+
+/datum/relic_node/teeth/on_generate()
+	tooth_count = rand(-5, 5)
+	if (tooth_count == 0)
+		desc = "This node didn't seem to do anything..."
+
+/datum/relic_node/teeth/reaction_power(mob/user)
+	if (tooth_count == 0)
+		to_chat(user, span_warning("[parent_relic] seizes up, and seems to do nothing..."))
+		return;
+
+	for (var/mob/living/carbon/c in view(1, parent_relic))
+		var/obj/item/bodypart/head/teeth_receptangle = c.get_bodypart(BODY_ZONE_HEAD)
+		teeth_receptangle.teeth_count += tooth_count
+		parent_relic.cur_material += tooth_count
+
+		if (teeth_receptangle.teeth_count < 0)
+			teeth_receptangle.teeth_count = 0 // can't have negative teeth!
+		c.take_damage(15, BRUTE)
+		playsound(parent_relic, 'sound/items/tools/drill_use.ogg', 50, TRUE)
+
+		if (tooth_count < 0)
+			to_chat(c, span_warning("[abs(tooth_count)] of your teeth rip themselves out to be absorbed by [parent_relic]!"))
+		else
+			to_chat(c, span_warning("[parent_relic] snaps into your mouth and adds [tooth_count] teeth, making room wherever it can!"))
+
+		break
+	return
+
 /obj/item/relic
 	desc = "What mysteries could this hold? Maybe Research & Development knows how to analyze it...."
 	//Minimum possible cooldown.
-	min_cooldown = 2 SECONDS
+	min_cooldown = 3 SECONDS
 	//Max possible cooldown.
 	max_cooldown = 12 SECONDS
 	w_class = WEIGHT_CLASS_NORMAL
@@ -602,6 +675,8 @@
 	var/mob/living/embedded_mob = null
 	var/obj/item/bodypart/embedded_limb = null
 	var/very_dangerous = FALSE
+	var/cur_material = RELIC_MATERIAL_CAP // limiting the maximum spawns of things to save servers
+	var/depleted = FALSE
 	var/reacting_when_off_cooldown = FALSE //has a pending reaction
 	var/static/list/existing_relics = list()
 
@@ -619,13 +694,14 @@
 		/datum/relic_node/sound		= 10,
 		/datum/relic_node/rad_pulse	= 10,
 		/datum/relic_node/teleport	= 10,
-		/datum/relic_node/dimensional_shift = 10,
+		/datum/relic_node/dimensional_shift = 5,
 		/datum/relic_node/blood		= 10,
 		/datum/relic_node/rosetta	= 10,
 //		/datum/relic_node/tabled	= 10, // they keep changing how table smashing works in the code
-		/datum/relic_node/contraband= 5,
-		/datum/relic_node/cloaking	= 5,
-		/datum/relic_node/embed		= 10,
+		/datum/relic_node/contraband= 7,
+		/datum/relic_node/cloaking	= 10,
+		/datum/relic_node/embed		= 5,
+		/datum/relic_node/teeth 	= 7,
 	)
 
 	var/static/list/relic_trans_types = list(
@@ -634,13 +710,13 @@
 		/datum/relic_trans/harm		= 10,
 		/datum/relic_trans/heat		= 10,
 		/datum/relic_trans/reagent	= 10,
-		/datum/relic_trans/paint	= 10,
+		/datum/relic_trans/paint	= 5,
 		// /datum/relic_trans/vacuum, // Requires adding a tick, not gonna do that.
 		/datum/relic_trans/irradiate= 10,
 		/datum/relic_trans/explode	= 10,
 		/datum/relic_trans/tracked	= 10,
 		/datum/relic_trans/hear		= 10,
-		/datum/relic_trans/mouseover= 10,
+		/datum/relic_trans/mouseover= 3,
 	)
 
 /obj/item/relic/Initialize()
@@ -672,6 +748,9 @@
 
 /obj/item/relic/proc/on_emped(severity, protection)
 	SIGNAL_HANDLER
+	if (current_node == null)
+		return
+	current_node.check_trans(null, /datum/relic_trans/emp)
 	current_node?.check_trans(null, /datum/relic_trans/emp)
 	if (!activated)
 		reveal()
@@ -679,11 +758,16 @@
 
 /obj/item/relic/proc/on_fired(exposed_temperature, exposed_volume)
 	SIGNAL_HANDLER
+	if (current_node == null)
+		return
+	current_node.check_trans(null, /datum/relic_trans/heat)
 	current_node?.check_trans(null, /datum/relic_trans/heat)
 	return
 
 /obj/item/relic/proc/on_clicked(atom/source, mob/user, obj/item/item)
 	SIGNAL_HANDLER
+	if (current_node == null)
+		return
 	if(item.get_temperature() >= FIRE_MINIMUM_TEMPERATURE_TO_EXIST)
 		balloon_alert(user, "The heat transfer warms [src].")
 		current_node?.check_trans(user, /datum/relic_trans/heat)
@@ -698,21 +782,33 @@
 
 /obj/item/relic/proc/on_hit_react(datum/source, mob/living/carbon/human/owner, atom/movable/hitby, attack_text, final_block_chance, damage, attack_type, damage_type)
 	SIGNAL_HANDLER
+	if (current_node == null)
+		return
+	current_node.check_trans(owner, /datum/relic_trans/harm, owner)
 	current_node?.check_trans(owner, /datum/relic_trans/harm, owner)
 	return
 
 /obj/item/relic/proc/on_painted()
 	SIGNAL_HANDLER
+	if (current_node == null)
+		return
+	current_node.check_trans(null, /datum/relic_trans/paint)
 	current_node?.check_trans(null, /datum/relic_trans/paint)
 	return
 
 /obj/item/relic/proc/on_exposure(list/lists, /datum/reagents/the_reagents, methods, volume_modifier, show_message)
 	SIGNAL_HANDLER
+	if (current_node == null)
+		return
+	current_node.check_trans(null, /datum/relic_trans/reagent)
 	current_node?.check_trans(null, /datum/relic_trans/reagent)
 	return
 
 /obj/item/relic/proc/on_radiated()
 	SIGNAL_HANDLER
+	if (current_node == null)
+		return
+	current_node.check_trans(null, /datum/relic_trans/irradiate)
 	current_node?.check_trans(null, /datum/relic_trans/irradiate)
 	return
 
@@ -730,7 +826,7 @@
 
 /obj/item/relic/proc/handle_hearing(datum/source, list/hearing_args)
 	SIGNAL_HANDLER
-	if (hearing_args[HEARING_SPEAKER] == src || get_dist(src, hearing_args[HEARING_SPEAKER]) > canhear_range || hearing_args[HEARING_MESSAGE_MODE][MODE_RELAY])
+	if (current_node == null || hearing_args[HEARING_SPEAKER] == src || get_dist(src, hearing_args[HEARING_SPEAKER]) > canhear_range || hearing_args[HEARING_MESSAGE_MODE][MODE_RELAY])
 		return .
 	//to_chat(hearing_args[HEARING_SPEAKER], span_warning("DEBUG: [source] is listening to [hearing_args[HEARING_SPEAKER]]...."))
 	current_node?.check_trans(null, /datum/relic_trans/hear)
@@ -749,7 +845,7 @@
 	become_hearing_sensitive(INNATE_TRAIT)
 	var/list/datum/relic_node/not_orphaned = list()
 	// Generate nodes up to limit
-	node_limit = rand(3, 15)
+	node_limit = rand(5, 20)
 	for (var/_i in 0 to node_limit)
 		var/relic_type = pick_weight(relic_reactions)
 		var/datum/relic_node/new_relic_node = new relic_type
@@ -788,10 +884,15 @@
 		var/datum/relic_trans/new_relic_trans2 = new relic_trans_type
 		new_relic_trans2.next_node = it
 		new_relic_trans.next_node.relic_transes.Add(new_relic_trans2)
-
+	visible_message(span_notice("the [src] hums to life, revealing its true nature!"))
 	return
 
 ///Overrides for base methods
+
+/obj/item/relic/MouseEntered(location, control, params)
+	. = ..()
+	if (current_node != null)
+		current_node.check_trans(null, /datum/relic_trans/mouseover)
 
 /obj/item/relic/attack_hand(mob/user, list/modifiers)
 	if (!activated)
@@ -800,6 +901,8 @@
 	if(istype(living_user) && living_user.combat_mode)
 		user.do_attack_animation(src, ATTACK_EFFECT_PUNCH)
 		to_chat(user, span_warning("You smack the [src]!"))
+		if (current_node != null)
+			current_node.check_trans(user, /datum/relic_trans/harm, user)
 		current_node?.check_trans(user, /datum/relic_trans/harm, user)
 		return TRUE
 	else
@@ -807,6 +910,7 @@
 			var/datum/relic_node/rosetta/r = current_node
 			var/mob/living/l = user
 			var/datum/language_holder/lholder = l.get_language_holder()
+			if(lholder.understood_languages[r.language] < r.percent)
 			if(lholder.best_mutual_languages[r.language] < r.percent)
 				to_chat(user, span_notice("[src] has familiar text that fills you with knowledge of a language."))
 			else
@@ -815,6 +919,8 @@
 			l.grant_partial_language(r.language, r.percent, MAGIC_TRAIT)
 		else
 			to_chat(user, span_notice("You touch [src], its surface seems inviting."))
+		if (current_node != null)
+			current_node.check_trans(user, /datum/relic_trans/touch)
 		current_node?.check_trans(user, /datum/relic_trans/touch)
 	return ..()
 
@@ -826,9 +932,13 @@
 	var/mob/living/living_user = user
 	if(istype(living_user) && living_user.combat_mode)
 		to_chat(user, span_warning("You smack the [src]!"))
+		if (current_node != null)
+			current_node.check_trans(user, /datum/relic_trans/harm, user)
 		current_node?.check_trans(user, /datum/relic_trans/harm, user)
 	else
 		to_chat(user, span_notice("You touch [src], its surface seems inviting."))
+		if (current_node != null)
+			current_node.check_trans(user, /datum/relic_trans/touch)
 		current_node?.check_trans(user, /datum/relic_trans/touch)
 	return //..()
 
@@ -843,10 +953,15 @@
 			to_chat(user, span_warning("You smack yourself with [src]!"))
 		else
 			to_chat(user, span_warning("You smack [M] with [src]!"))
+		cur_material += 1
+		if (current_node != null)
+			current_node.check_trans(user, /datum/relic_trans/harm, M)
 		current_node?.check_trans(user, /datum/relic_trans/harm, M)
 	return ..()
 
 /obj/item/relic/ex_act(severity, target)
+	if (current_node != null)
+		current_node.check_trans(null, /datum/relic_trans/explode)
 	current_node?.check_trans(null, /datum/relic_trans/explode)
 	return
 
